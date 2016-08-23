@@ -4702,13 +4702,14 @@
                             continue; // Already imported
                         if (/\.proto$/i.test(importFilename) && !ProtoBuf.DotProto)       // If this is a light build
                             importFilename = importFilename.replace(/\.proto$/, ".json"); // always load the JSON file
-                        var contents = ProtoBuf.Util.fetch(importFilename);
-                        if (contents === null)
-                            throw Error("failed to import '"+importFilename+"' in '"+filename+"': file not found");
-                        if (/\.json$/i.test(importFilename)) // Always possible
-                            this["import"](JSON.parse(contents+""), importFilename); // May throw
-                        else
-                            this["import"](ProtoBuf.DotProto.Parser.parse(contents), importFilename); // May throw
+                        ProtoBuf.Util.fetch(importFilename, contents=> {
+                            if (contents === null)
+                                throw Error("failed to import '"+importFilename+"' in '"+filename+"': file not found");
+                            if (/\.json$/i.test(importFilename)) // Always possible
+                                this["import"](JSON.parse(contents+""), importFilename); // May throw
+                            else
+                                this["import"](ProtoBuf.DotProto.Parser.parse(contents), importFilename); // May throw
+                        })
                     } else // Import structure
                         if (!filename)
                             this["import"](json['imports'][i]);
