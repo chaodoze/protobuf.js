@@ -416,6 +416,7 @@ ProtoBuf.Builder = (function(ProtoBuf, Lang, Reflect) {
             } else
                 importRoot = null;
 
+            const fileImports = []
             for (var i=0; i<json['imports'].length; i++) {
                 if (typeof json['imports'][i] === 'string') { // Import file
                     if (!importRoot)
@@ -428,14 +429,7 @@ ProtoBuf.Builder = (function(ProtoBuf, Lang, Reflect) {
                         continue; // Already imported
                     if (/\.proto$/i.test(importFilename) && !ProtoBuf.DotProto)       // If this is a light build
                         importFilename = importFilename.replace(/\.proto$/, ".json"); // always load the JSON file
-                    ProtoBuf.Util.fetch(importFilename, contents=> {
-                        if (contents === null)
-                            throw Error("failed to import '"+importFilename+"' in '"+filename+"': file not found");
-                        if (/\.json$/i.test(importFilename)) // Always possible
-                            this["import"](JSON.parse(contents+""), importFilename); // May throw
-                        else
-                            this["import"](ProtoBuf.DotProto.Parser.parse(contents), importFilename); // May throw
-                    })
+                    fileImports.push(importFilename)
                 } else // Import structure
                     if (!filename)
                         this["import"](json['imports'][i]);
@@ -444,6 +438,21 @@ ProtoBuf.Builder = (function(ProtoBuf, Lang, Reflect) {
                     else // Without extension: Append _importN to make it unique
                         this["import"](json['imports'][i], filename+"_import"+i);
             }
+            fileImports.forEach(importFilename => {
+              ProtoBuf.Util.fetch(importFilename, contents => {
+                try {
+                  console.log('import', filename)
+                  if (contents === null)
+                      throw Error("failed to import '"+importFilename+"' in '"+filename+"': file not found");
+                  if (/\.json$/i.test(importFilename)) // Always possible
+                      this["import"](JSON.parse(contents+""), importFilename); // May throw
+                  else
+                      this["import"](ProtoBuf.DotProto.Parser.parse(contents), importFilename); // May throw
+                } catch (e) {
+                  console.error ('eeeeror', e)
+                }
+              })
+            })
             if (resetRoot) // Reset import root override when all imports are done
                 this.importRoot = null;
         }
